@@ -1,0 +1,4 @@
+DartsScalaJSON
+==============
+
+Simple JSON support
