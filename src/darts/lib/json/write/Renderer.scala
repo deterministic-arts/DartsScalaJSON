@@ -135,6 +135,26 @@ abstract class Renderer { outer =>
 	
     private var state: State = State.TopLevel
     
+    /**
+     * This method is provided for the benefit of formatters,
+     * which need to render complex objects. The state handling
+     * machinery does not allow them to call `withMap` or `withList`
+     * directly on the renderer they were given. If they wish to
+     * render complex objects, they must do so in a sub-renderer
+     * provided by this method.
+     * 
+     * In other words: any formatter (and only a formatter), which
+     * wants to call one of the following methods to perform its
+     * job:
+     * 
+     * - value
+     * - openMap (or withMap)
+     * - openArray (or withList)
+     * 
+     * must do so in a sub-renderer from within the dynamic 
+     * extent of a call to this method.
+     */
+
     def sub[U](fn: Renderer=>U): U = fn(new Renderer {
         def close(): Unit = throw new UnsupportedOperationException
         def write(str: String, start: Int, len: Int): Unit = outer.write(str, start, len)
