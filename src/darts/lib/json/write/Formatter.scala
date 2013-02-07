@@ -153,9 +153,10 @@ object Formatter {
     }
     
     final class OptionFormatter[T] (val inner: Formatter[T]) extends Formatter[Option[T]] {
-        def format(writer: Renderer, value: Rep): Unit = 
-    		if (value.isEmpty) writer.write("null") 
-    		else inner.format(writer, value.get)
+        def format(writer: Renderer, value: Rep): Unit = writer.sub { act =>
+    		if (value.isEmpty) act.undefined 
+    		else act.value(value.get)(inner)
+        }
     }
     
     /**

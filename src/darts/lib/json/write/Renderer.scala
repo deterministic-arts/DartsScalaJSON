@@ -7,12 +7,14 @@ import java.io.OutputStream
 
 private sealed abstract class State {
 
-    def value[T](writer: Renderer, value: T, formatter: Formatter[T]): State = throw new IllegalStateException
-    def key(writer: Renderer, key: String): State = throw new IllegalStateException
-    def openMap(writer: Renderer): State = throw new IllegalStateException
-    def closeMap(writer: Renderer): State = throw new IllegalStateException
-    def openArray(writer: Renderer): State = throw new IllegalStateException
-    def closeArray(writer: Renderer): State = throw new IllegalStateException
+    protected def badState(s: String): Nothing = throw new IllegalStateException("'" + s + "' in " + getClass.getSimpleName)
+    
+    def value[T](writer: Renderer, value: T, formatter: Formatter[T]): State = badState("value")
+    def key(writer: Renderer, key: String): State = badState("key")
+    def openMap(writer: Renderer): State = badState("openMap")
+    def closeMap(writer: Renderer): State = badState("closeMap")
+    def openArray(writer: Renderer): State = badState("openArray")
+    def closeArray(writer: Renderer): State = badState("closeArray")
 }
 
 private final class ArrayFirst (val next: State) extends State {
@@ -105,6 +107,10 @@ private final class MapValue(val next: State) extends State {
     override def openMap(writer: Renderer): State = {
         new MapFirstKey(keyState)
     }
+    
+    override def closeMap(writer: Renderer): State = {
+        badState("closeMap")
+    }
 
     override def openArray(writer: Renderer): State = {
         new ArrayFirst(keyState)
@@ -125,9 +131,14 @@ private object State {
     }
 }
 
-abstract class Renderer {
+abstract class Renderer { outer =>
 	
     private var state: State = State.TopLevel
+    
+    def sub[U](fn: Renderer=>U): U = fn(new Renderer {
+        def close(): Unit = throw new UnsupportedOperationException
+        def write(str: String, start: Int, len: Int): Unit = outer.write(str, start, len)
+    })
 
     /**
      * Close this renderer, also closing its underlying output
@@ -169,6 +180,11 @@ abstract class Renderer {
     
     def value[T](value: T)(implicit fmt: Formatter[T]): this.type = {
         state = state.value(this, value, fmt)
+        this
+    }
+    
+    def undefined: this.type = {
+        state = state.value(this, "", Renderer.NullFmt)
         this
     }
     
@@ -291,5 +307,9 @@ object Renderer {
         val w = new StringWriter
         doRender(new WriterRenderer(w), fn)
         w.toString
+    } 
+    
+    private object NullFmt extends Formatter[Any] {
+        def format(r: Renderer, a: Any): Unit = r.write("null")
     } 
 }
