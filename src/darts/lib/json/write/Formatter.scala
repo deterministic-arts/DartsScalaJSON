@@ -3,7 +3,7 @@ package darts.lib.json.write
 import java.io.Writer
 import java.util.Locale
 
-import org.joda.time.DateTime
+import org.joda.time.{DateTime, Instant}
 import org.joda.time.chrono.ISOChronology
 import org.joda.time.format.DateTimeFormat
 
@@ -137,6 +137,10 @@ object Formatter {
     }
     
     implicit object DateTimeFormatter extends Formatter[DateTime] {
+        def format(writer: Renderer, value: Rep): Unit = writeString(writer, value.toString(DateTimeFmt))
+    }
+    
+    implicit object InstantFormatter extends Formatter[Instant] {
         def format(writer: Renderer, value: Rep): Unit = writeString(writer, value.toString(DateTimeFmt))
     }
     
