@@ -85,7 +85,7 @@ object Formatter {
 				case cc if 32 <= cc && cc <= 126 => { p += 1 }
 				case _ => {
 				    if (start < p) writeSeq(start, p)
-				    writeStr("\\u%04x".format(ch))
+				    writeStr("\\u%04x".format(ch.asInstanceOf[Int]))
 				    p += 1
 				    start = p
 				}
@@ -157,6 +157,10 @@ object Formatter {
     		if (value.isEmpty) act.undefined 
     		else act.value(value.get)(inner)
         }
+    }
+    
+    implicit object URIFormatter extends Formatter[java.net.URI] {
+        def format(writer: Renderer, value: Rep): Unit = writeString(writer, value.toASCIIString)
     }
     
     /**
